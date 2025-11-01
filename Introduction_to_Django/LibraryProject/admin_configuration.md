@@ -1,7 +1,12 @@
+# Django Admin Configuration for Book Model
+
+## Registration
+The `Book` model was registered in `bookshelf/admin.py` using the following code:
+
+```python
 from django.contrib import admin
 from .models import Book
 
-# Customize how Book appears in the admin panel
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'publication_year')
