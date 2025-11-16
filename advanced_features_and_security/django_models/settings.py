@@ -40,11 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'relationship_app',  # your existing app
-    'users',             # add this for the custom user model
+    'relationship_app',
+    'users',  # 👈 add this line
 ]
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -128,3 +126,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Tell Django to use the custom user model
+AUTH_USER_MODEL = 'users.CustomUser'
