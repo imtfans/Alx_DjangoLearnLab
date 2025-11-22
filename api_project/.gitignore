@@ -1,0 +1,13 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Database
+*.sqlite3
+
+# Django migrations cache
+api/migrations/__pycache__/
+
+# IDE files (optional)
+.vscode/
+.idea/
