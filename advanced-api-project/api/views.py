@@ -47,6 +47,21 @@ class BookListView(generics.ListAPIView):
     serializer_class = BookSerializer
     permission_classes = [permissions.AllowAny]
 
-    # 👇 Add your search/filter config here
-    filter_backends = [filters.SearchFilter]
+    # 🔍 Enable filtering, search, and ordering
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter
+    ]
+
+    # 🎯 Filtering fields
+    filterset_fields = ['title', 'author', 'publication_year']
+
+    # 📝 Searching fields
     search_fields = ['title', 'author']
+
+    # ↕ Ordering fields
+    ordering_fields = ['title', 'publication_year']
+    ordering = ['title']  # default orderin
+    # 👇 Add your search/filter config here
+    
