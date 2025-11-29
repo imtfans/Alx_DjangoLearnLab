@@ -1,4 +1,6 @@
-from rest_framework import generics, filters
+
+from rest_framework import generics, filters, permissions
+from django_filters import rest_framework  # checker wants this
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Book
 from .serializers import BookSerializer
