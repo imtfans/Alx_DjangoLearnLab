@@ -53,7 +53,7 @@ class BookAPITests(APITestCase):
     # CREATE VIEW TEST
     # --------------------------
     def test_create_book_authenticated(self):
-        self.client.force_authenticate(user=self.user)  # login
+         self.client.login(username='testuser', password='password')  # login
         data = {'title': 'Book Three', 'author': 'Author C', 'publication_year': 2022}
         response = self.client.post(self.create_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
