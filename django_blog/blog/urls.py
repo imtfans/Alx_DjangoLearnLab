@@ -1,26 +1,52 @@
-
-    
-
 from django.urls import path
-from . import views
 from .views import (
+    home,
+    register_view,
+    CustomLoginView,
+    CustomLogoutView,
+    profile_view,
     PostListView,
     PostDetailView,
     PostCreateView,
     PostUpdateView,
-    PostDeleteView
+    PostDeleteView,
+    CommentCreateView,
+    CommentUpdateView,
+    CommentDeleteView,
 )
 
+app_name = 'blog'
+
 urlpatterns = [
-     path('', views.home, name='home'),
-    path('login/', views.CustomLoginView.as_view(), name='login'),        # REQUIRED
-    path('register/', views.register_view, name='register'),              # REQUIRED
-    path('profile/', views.profile_view, name='profile'),                # REQUIRED
+    path('', PostListView.as_view(), name='post-list'),
+    path('home/', home, name='home'),
 
+    # User Auth
+    path('register/', register_view, name='register'),
+    path('login/', CustomLoginView.as_view(), name='login'),
+    path('logout/', CustomLogoutView.as_view(), name='logout'),
+    path('profile/', profile_view, name='profile'),
 
-    path('', PostListView.as_view(), name='blog-home'),
+    # Posts
     path('post/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
     path('post/new/', PostCreateView.as_view(), name='post-create'),
     path('post/<int:pk>/update/', PostUpdateView.as_view(), name='post-update'),
     path('post/<int:pk>/delete/', PostDeleteView.as_view(), name='post-delete'),
+
+    # Comments
+    path(
+        'post/<int:post_pk>/comment/new/',
+        CommentCreateView.as_view(),
+        name='comment-create'
+    ),
+    path(
+        'comment/<int:pk>/edit/',
+        CommentUpdateView.as_view(),
+        name='comment-edit'
+    ),
+    path(
+        'comment/<int:pk>/delete/',
+        CommentDeleteView.as_view(),
+        name='comment-delete'
+    ),
 ]
