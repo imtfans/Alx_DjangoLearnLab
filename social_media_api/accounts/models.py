@@ -4,13 +4,12 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     bio = models.TextField(blank=True)
-    profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
 
-    # Users this user is following
     following = models.ManyToManyField(
-        'self',
+        "self",
         symmetrical=False,
-        related_name='followers',
+        related_name="followers",
         blank=True
     )
 
