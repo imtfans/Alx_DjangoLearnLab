@@ -19,10 +19,12 @@ class User(AbstractUser):
     # Social media fields
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    followers = models.ManyToManyField(
+    
+    # Users this user follows (many-to-many self-referential)
+    following = models.ManyToManyField(
         'self',
         symmetrical=False,
-        related_name='following',
+        related_name='followers',
         blank=True
     )
 

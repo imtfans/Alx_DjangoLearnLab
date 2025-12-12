@@ -1,10 +1,12 @@
 from rest_framework import viewsets, permissions, filters
+from rest_framework import generics
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
-from django_filters.rest_framework import DjangoFilterBackend
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
+    """Custom permission to allow only authors to edit or delete their content."""
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -30,3 +32,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+
+class FeedView(generics.ListAPIView):
+    """List posts from users that the current user is following."""
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Make sure your User model has a 'following' ManyToMany field
+        return Post.objects.filter(author__in=user.following.all()).order_by('-created_at')
