@@ -1,5 +1,7 @@
 from django.db import models
-from django.conf import settings  # fixed typo
+from django.conf import settings  # fixed 
+
+
 
 # Post model
 class Post(models.Model):
@@ -35,3 +37,4 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.author.username} on {self.post.title}'
+

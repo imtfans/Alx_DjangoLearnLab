@@ -1,10 +1,54 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import get_user_model, authenticate
 from django.shortcuts import get_object_or_404
-from .models import User  # your custom user model
+from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
+
+User = get_user_model()
 
 # ----------------------
-# Follow a user
+# Register View
+# ----------------------
+class RegisterView(generics.CreateAPIView):
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        user = User.objects.get(username=response.data['username'])
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'user': response.data, 'token': token.key}, status=status.HTTP_201_CREATED)
+
+
+# ----------------------
+# Login View
+# ----------------------
+class LoginView(generics.GenericAPIView):
+    serializer_class = UserLoginSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']  # Ensure your serializer returns {'user': user}
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key, 'user_id': user.id, 'username': user.username}, status=status.HTTP_200_OK)
+
+
+# ----------------------
+# Profile View (Retrieve/Update)
+# ----------------------
+class ProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+
+# ----------------------
+# Follow User
 # ----------------------
 class FollowUserView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -21,7 +65,7 @@ class FollowUserView(generics.GenericAPIView):
 
 
 # ----------------------
-# Unfollow a user
+# Unfollow User
 # ----------------------
 class UnfollowUserView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]

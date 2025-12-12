@@ -1,26 +1,12 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
-    # Avoid reverse accessor clashes
-    groups = models.ManyToManyField(
-        Group,
-        related_name="custom_user_set",
-        blank=True,
-        help_text='The groups this user belongs to.'
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name="custom_user_permissions_set",
-        blank=True,
-        help_text='Specific permissions for this user.'
-    )
+    email = models.EmailField(unique=True)
+    bio = models.TextField(blank=True)
+    profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
 
-    # Social media fields
-    bio = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    
-    # Users this user follows (many-to-many self-referential)
+    # Users this user is following
     following = models.ManyToManyField(
         'self',
         symmetrical=False,

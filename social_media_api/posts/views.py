@@ -1,10 +1,11 @@
-from rest_framework import viewsets, permissions, filters
-from rest_framework import generics
+from rest_framework import viewsets, permissions, filters, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
 
-
+# ----------------------
+# Custom Permissions
+# ----------------------
 class IsAuthorOrReadOnly(permissions.BasePermission):
     """Custom permission to allow only authors to edit or delete their content."""
     def has_object_permission(self, request, view, obj):
@@ -12,7 +13,9 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             return True
         return obj.author == request.user
 
-
+# ----------------------
+# Post ViewSet
+# ----------------------
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
@@ -24,7 +27,9 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-
+# ----------------------
+# Comment ViewSet
+# ----------------------
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('created_at')
     serializer_class = CommentSerializer
@@ -33,7 +38,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-
+# ----------------------
+# Feed View
+# ----------------------
 class FeedView(generics.ListAPIView):
     """List posts from users that the current user is following."""
     serializer_class = PostSerializer
