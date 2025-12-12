@@ -1,23 +1,12 @@
 from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from .serializers import (
-    UserRegistrationSerializer,
-    UserLoginSerializer,
-    UserSerializer
-)
-
-# Dummy reference required only for the automated task checker
-try:
-    from .models import User as CustomUser
-    DUMMY_CHECKER_QUERYSET = CustomUser.objects.all()
-except Exception:
-    pass
-
-User = get_user_model()
+from .models import User
+from .serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 
 
 # ----------------------
@@ -49,7 +38,6 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
-
         return Response({
             "token": token.key,
             "user_id": user.id,
@@ -71,39 +59,36 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 # ----------------------
 # Follow User
 # ----------------------
-class FollowUserView(generics.GenericAPIView):
+class FollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
-    lookup_field = "id"
 
-    def post(self, request, *args, **kwargs):
-        user_id = kwargs.get("id")
-        target_user = get_object_or_404(self.get_queryset(), id=user_id)
+    def post(self, request, user_id):
+        target_user = get_object_or_404(User, id=user_id)
 
         if target_user == request.user:
-            return Response({"error": "You cannot follow yourself"}, status=400)
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
 
         if request.user.following.filter(id=target_user.id).exists():
-            return Response({"message": "You already follow this user"}, status=200)
+            return Response({"detail": "You already follow this user."}, status=status.HTTP_200_OK)
 
         request.user.following.add(target_user)
-        return Response({"message": f"You are now following {target_user.username}"}, status=200)
+        return Response({"detail": f"You are now following {target_user.username}."}, status=status.HTTP_200_OK)
 
 
 # ----------------------
 # Unfollow User
 # ----------------------
-class UnfollowUserView(generics.GenericAPIView):
+class UnfollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
-    lookup_field = "id"
 
-    def post(self, request, *args, **kwargs):
-        user_id = kwargs.get("id")
-        target_user = get_object_or_404(self.get_queryset(), id=user_id)
+    def post(self, request, user_id):
+        target_user = get_object_or_404(User, id=user_id)
+
+        if target_user == request.user:
+            return Response({"detail": "You cannot unfollow yourself."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.following.filter(id=target_user.id).exists():
-            return Response({"error": "You are not following this user"}, status=400)
+            return Response({"detail": "You are not following this user."}, status=status.HTTP_400_BAD_REQUEST)
 
         request.user.following.remove(target_user)
-        return Response({"message": f"You have unfollowed {target_user.username}"}, status=200)
+        return Response({"detail": f"You have unfollowed {target_user.username}."}, status=status.HTTP_200_OK)
