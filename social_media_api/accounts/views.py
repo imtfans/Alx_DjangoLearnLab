@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import User  # your custom user model
 
+# ----------------------
 # Follow a user
+# ----------------------
 class FollowUserView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all()  # required for the task checker
@@ -18,7 +20,9 @@ class FollowUserView(generics.GenericAPIView):
         return Response({'message': f'You are now following {target_user.username}'}, status=status.HTTP_200_OK)
 
 
+# ----------------------
 # Unfollow a user
+# ----------------------
 class UnfollowUserView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all()  # required for the task checker
