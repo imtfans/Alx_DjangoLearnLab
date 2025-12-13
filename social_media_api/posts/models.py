@@ -1,13 +1,15 @@
 from django.db import models
-from django.conf import settings  # fixed 
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
-
-
-# Post model
+# ----------------------
+# Post Model
+# ----------------------
 class Post(models.Model):
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='posts'
     )
     title = models.CharField(max_length=255)
@@ -19,15 +21,17 @@ class Post(models.Model):
         return self.title
 
 
-# Comment model
+# ----------------------
+# Comment Model
+# ----------------------
 class Comment(models.Model):
     post = models.ForeignKey(
-        Post, 
-        on_delete=models.CASCADE, 
+        Post,
+        on_delete=models.CASCADE,
         related_name='comments'
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='comments'
     )
@@ -38,3 +42,58 @@ class Comment(models.Model):
     def __str__(self):
         return f'Comment by {self.author.username} on {self.post.title}'
 
+
+# ----------------------
+# Like Model
+# ----------------------
+class Like(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='likes'
+    )
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='likes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "post")
+
+    def __str__(self):
+        return f"{self.user.username} liked {self.post.title}"
+
+
+# ----------------------
+# Notification Model
+# ----------------------
+class Notification(models.Model):
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='actor_notifications'
+    )
+    verb = models.CharField(max_length=255)  # e.g., "liked your post"
+    target_ct = models.ForeignKey(
+        ContentType,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    target = GenericForeignKey("target_ct", "target_id")
+    is_read = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username}: {self.verb}"

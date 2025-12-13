@@ -1,16 +1,17 @@
-from rest_framework import generics, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
+from django.contrib.contenttypes.models import ContentType
 
-from .models import Post
-from .serializers import PostSerializer
+from .models import Post, Comment, Like
+from .serializers import PostSerializer, CommentSerializer
+from notifications.models import Notification
 
 
-class PostListView(generics.ListCreateAPIView):
-    """
-    List all posts or create a new post.
-    """
+# ----------------------
+# Post ViewSet
+# ----------------------
+class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -18,29 +19,68 @@ class PostListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-
-class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Retrieve, update, or delete a specific post.
-    """
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class UserFeedView(APIView):
-    """
-    Returns a feed of posts from users the authenticated user follows.
-    Ordered by most recent posts first.
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        # Users the current user is following
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def feed(self, request):
         following_users = request.user.following.all()
-
-        # FEED QUERY — required by checker
         posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
-
-        serializer = PostSerializer(posts, many=True)
+        serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request, pk=None):
+        post = self.get_object()
+
+        like, created = Like.objects.get_or_create(
+            user=request.user,
+            post=post
+        )
+
+        if not created:
+            return Response(
+                {"detail": "You have already liked this post."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if post.author != request.user:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                verb="liked your post",
+                content_type=ContentType.objects.get_for_model(Post),
+                object_id=post.id
+            )
+
+        return Response({"detail": "Post liked successfully."})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def unlike(self, request, pk=None):
+        post = self.get_object()
+
+        deleted, _ = Like.objects.filter(
+            user=request.user,
+            post=post
+        ).delete()
+
+        if deleted == 0:
+            return Response(
+                {"detail": "You have not liked this post."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response({"detail": "Post unliked successfully."})
+
+
+# ----------------------
+# Comment ViewSet
+# ----------------------
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs.get('post_pk') or self.request.query_params.get('post')
+        return Comment.objects.filter(post_id=post_id).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs.get('post_pk') or self.request.data.get('post')
+        serializer.save(author=self.request.user, post_id=post_id)
