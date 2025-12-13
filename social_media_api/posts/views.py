@@ -68,3 +68,16 @@ class PostViewSet(viewsets.ModelViewSet):
             )
 
         return Response({"detail": "Post unliked successfully."}, status=status.HTTP_200_OK)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs.get('post_pk') or self.request.query_params.get('post')
+        return Comment.objects.filter(post_id=post_id).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs.get('post_pk') or self.request.data.get('post')
+        serializer.save(author=self.request.user, post_id=post_id)
