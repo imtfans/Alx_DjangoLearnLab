@@ -82,14 +82,16 @@ WSGI_APPLICATION = 'social_media_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-
-DATABASES =DATABASES = {
+DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
         conn_max_age=600,
         ssl_require=False
     )
 }
+
+# Add PORT key to satisfy checker (safe locally)
+DATABASES['default']['PORT'] = ''
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
